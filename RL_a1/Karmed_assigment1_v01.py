@@ -106,7 +106,7 @@ class BanditAgent:
             action (int): Index of the chosen action.
             reward (float): Observed reward.
         """
-        if self.learning_method == ("incrimental"):
+        if self.learning_method == ("sample_average"):
             self.action_counts[action] += 1
             self.q_estimates[action] += (reward - self.q_estimates[action]) / self.action_counts[action]
         if self.learning_method==("constant_stepsize"):
@@ -236,14 +236,14 @@ q_init_method = 'nonstationary'
 std = 0.01
 k = 10
 # Agent parameters
-learning_method_vec = ['constant_stepsize']
+learning_method_vec = ['constant_stepsize', 'sample_average']
 step_size = 0.1
 #Experiment parameters
 steps = 10000
 runs = 2000
 
 # Epsilon values to compare
-epsilons = [0.1]
+epsilons = [0.1, 0.01]
 
 rewards = {
     (l_method, eps): np.zeros((runs, steps))
@@ -282,18 +282,18 @@ for learning_m in learning_method_vec:
     learning_method = learning_m
     
     for eps in epsilons:
+        environment = BanditEnvironment(k=k, q_init_method=q_init_method, std=std)
         for run in range(runs):
-            environment = BanditEnvironment(k=k, q_init_method = q_init_method, std=std)
             agent = BanditAgent(k=k, epsilon=eps, learning_method=learning_method, step_size=step_size)
-            
             for step in range(steps):
                 step_size_m[(learning_m,eps)][run][step] = agent.step_size
                 optimal_action = environment.get_optimal_action()
                 action = agent.choose_action()
                 environment.update_q_true()
                 reward = environment.get_reward(action)
+                #agent.update_step_size(action, reward)
                 agent.update_estimates(action, reward)
-                agent.update_step_size(action, reward)
+
 
                 # updates q_true by random walk (meaning can change optimal action on every step)
     
@@ -304,16 +304,16 @@ for learning_m in learning_method_vec:
 # Average over runs
 for learning_m in learning_method_vec:
     for eps in epsilons:
-        sum_rewards = np.sum(rewards[(learning_m,eps)],axis=0)
+        #sum_rewards = np.sum(rewards[(learning_m,eps)],axis=0)
         rewards_average[(learning_m,eps)] = np.mean(rewards[(learning_m,eps)], axis=0)
         optimal_actions_average[(learning_m,eps)] = (np.mean(optimal_actions[(learning_m,eps)], axis=0)) * 100
         step_size_average[(learning_m,eps)] = np.mean(step_size_m[(learning_m,eps)], axis=0)
 
-
-#save data
-np.save('step_size_average01_rms_1.npy', step_size_average)
-np.save('rewards_average01_rms_1.npy', rewards_average)
-np.save('optimal_actions_average01_rms_1.npy', optimal_actions_average)
+# 
+# #save data
+# np.save('step_size_average01.npy', step_size_average)
+# np.save('rewards_average01.npy', rewards_average)
+# np.save('optimal_actions_average01.npy', optimal_actions_average)
 
 # Plotting learning curves
 BanditPlotter.plot_learning_curves(steps, rewards_average, optimal_actions_average, step_size_average, epsilons, learning_method_vec)
