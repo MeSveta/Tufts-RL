@@ -4,10 +4,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import random
 from collections import defaultdict
-from race_track_environment import RaceTrackEnvironment
 
-
-class OffPolicyMCC:
+class MCC_policy:
     def __init__(self, env, num_episodes=10000, gamma=0.9):
         self.env = env
         self.gamma = gamma
@@ -21,13 +19,8 @@ class OffPolicyMCC:
         """
         Initialize Q-values with two keys:
           - First key: (state, velocity) -> (x, y, v_x, v_y)
-          - Second key: Action
+          - Second key: Action"""
 
-        :param track_map: 2D numpy array representing the racing track (0 = obstacle, 1 = valid track)
-        :param actions: List of possible actions [(a_x, a_y)]
-        :param velocity_range: Tuple (min_velocity, max_velocity) defining velocity limits.
-        :return: Nested dictionary Q[state, velocity][action] initialized to zero.
-        """
         Q = {}
         min_v, max_v = velocity_range
 
@@ -39,8 +32,8 @@ class OffPolicyMCC:
                     if x in self.env.start_states[0] and y in self.env.start_states[1]:
                         for v_x in range(-4, 1):
                             for v_y in range(min_v, max_v + 1):
-                                #Q[(x, y, v_x, v_y)] = {action: np.random.normal()-500 for action in actions}
-                                Q[(x, y, v_x, v_y)] = {action: 0 for action in actions}
+                                Q[(x, y, v_x, v_y)] = {action: np.random.normal()-500 for action in actions}
+                                #Q[(x, y, v_x, v_y)] = {action: 0 for action in actions}
 
 
                     # If Finish Position: No velocity needed
@@ -59,13 +52,8 @@ class OffPolicyMCC:
 
     def convert_state_to_key(self,state):
         """
-        Converts (state, speed) tuple into a single key in (x, y, v_x, v_y) format.
+        Converts (state, speed) tuple into a single key in (x, y, v_x, v_y) format."""
 
-        :param state: Tuple (self.env.state, self.env.speed)
-                      - state[0]: NumPy array (x, y)
-                      - state[1]: NumPy array (v_x, v_y)
-        :return: Tuple (x, y, v_x, v_y)
-        """
         return tuple(state[0].tolist() + state[1].tolist())
 
     def generate_episode(self, behavior_policy_epsilon, action_zero):
